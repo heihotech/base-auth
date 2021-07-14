@@ -22,6 +22,12 @@ module.exports = function (app) {
   );
 
   app.post(
+    "/api/auth/refreshtoken",
+    [joiVal.validate(joiVal.schemas.auth.refreshTokenPOST)],
+    controller.refreshToken
+  );
+
+  app.post(
     "/api/auth/signin",
     [joiVal.validate(joiVal.schemas.auth.signInPOST)],
     controller.signin
