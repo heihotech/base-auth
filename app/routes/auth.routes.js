@@ -1,5 +1,6 @@
 const { verify } = require("../middleware");
 const controller = require("../controllers/auth.controller");
+const { joiVal } = require("../middleware");
 
 module.exports = function (app) {
   app.use(function (req, res, next) {
@@ -12,9 +13,17 @@ module.exports = function (app) {
 
   app.post(
     "/api/auth/signup",
-    [verify.checkDuplicateUsernameOrEmail, verify.checkRolesExisted],
+    [
+      joiVal.validate(joiVal.schemas.auth.signUpPOST),
+      verify.checkDuplicateUsernameOrEmail,
+      verify.checkRolesExisted,
+    ],
     controller.signup
   );
 
-  app.post("/api/auth/signin", controller.signin);
+  app.post(
+    "/api/auth/signin",
+    [joiVal.validate(joiVal.schemas.auth.signInPOST)],
+    controller.signin
+  );
 };
