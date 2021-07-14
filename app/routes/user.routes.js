@@ -1,4 +1,4 @@
-const { auth } = require("../middleware");
+const { auth, joiVal } = require("../middleware");
 const controller = require("../controllers/user.controller");
 
 module.exports = function (app) {
@@ -10,23 +10,41 @@ module.exports = function (app) {
     next();
   });
 
-  app.get("/api/test/all", controller.allAccess);
-
   app.get(
-    "/api/test/super",
-    [auth.verifyToken, auth.superRole, auth.checkAuthorized],
-    controller.superBoard
-  );
-
-  app.get(
-    "/api/test/admin",
+    "/api/user/",
     [auth.verifyToken, auth.superRole, auth.adminRole, auth.checkAuthorized],
-    controller.adminBoard
+    controller.findAll
   );
-
   app.get(
-    "/api/test/finance",
-    [auth.verifyToken, auth.superRole, auth.financeRole, auth.checkAuthorized],
-    controller.financeBoard
+    "/api/user/:id",
+    [auth.verifyToken, auth.superRole, auth.adminRole, auth.checkAuthorized],
+    controller.findOne
+  );
+  app.post(
+    "/api/user/",
+    [
+      joiVal.validate(joiVal.schemas.user.userCreatePOST),
+      auth.verifyToken,
+      auth.superRole,
+      auth.adminRole,
+      auth.checkAuthorized,
+    ],
+    controller.create
+  );
+  app.put(
+    "/api/user/:id",
+    [
+      joiVal.validate(joiVal.schemas.user.userUpdatePOST),
+      auth.verifyToken,
+      auth.superRole,
+      auth.adminRole,
+      auth.checkAuthorized,
+    ],
+    controller.update
+  );
+  app.delete(
+    "/api/user/:id",
+    [auth.verifyToken, auth.superRole, auth.adminRole, auth.checkAuthorized],
+    controller.delete
   );
 };
