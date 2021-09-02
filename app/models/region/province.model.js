@@ -1,18 +1,20 @@
 module.exports = (sequelize, Sequelize) => {
-  const Role = sequelize.define(
-    "roles",
+  const Province = sequelize.define(
+    "provinces",
     {
       id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.BIGINT,
         primaryKey: true,
-        autoIncrement: true,
       },
       name: {
         type: Sequelize.STRING,
+        allowNull: false,
       },
     },
-    { paranoid: true }
+    {
+      paranoid: true,
+    }
   );
 
-  return Role;
+  return Province;
 };

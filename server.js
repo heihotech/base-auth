@@ -1,8 +1,7 @@
-const express = require("express");
-const bodyParser = require("body-parser");
-const cors = require("cors");
 const dotenv = require("dotenv");
 dotenv.config();
+const express = require("express");
+const cors = require("cors");
 
 const db = require("./app/models");
 
@@ -16,42 +15,33 @@ const app = express();
 app.use(cors());
 
 // parse requests of content-type - application/json
-app.use(bodyParser.json());
+app.use(express.json());
 
 // parse requests of content-type - application/x-www-form-urlencoded
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true }));
 
 const Role = db.role;
 
 // prod mode
-db.sequelize.sync();
+// db.sequelize.sync();
 
 // dev mode
-// db.sequelize.sync({ force: true }).then(() => {
-//   console.log("Drop and Resync Db");
-//   initial();
-// });
+db.sequelize.sync({ force: true }).then(() => {
+  console.log("Drop and Resync Db");
+  initial();
+});
 
 function initial() {
-  Role.create({
-    id: 1,
-    name: "super",
-  });
-
-  Role.create({
-    id: 2,
-    name: "user",
-  });
-
-  Role.create({
-    id: 3,
-    name: "admin",
-  });
-
-  Role.create({
-    id: 4,
-    name: "finance",
-  });
+  Role.bulkCreate([
+    { name: "super" },
+    { name: "admin" },
+    { name: "user" },
+    { name: "nurse" },
+    { name: "head of department" },
+    { name: "head of section" },
+    { name: "head of division" },
+    { name: "finance" },
+  ]);
 }
 
 // simple route

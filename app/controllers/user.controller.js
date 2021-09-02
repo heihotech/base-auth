@@ -15,35 +15,31 @@ const getPagination = (page, size) => {
 };
 
 const getPagingData = (data, page, limit) => {
-  const { count: totalUsers, rows: users } = data;
+  const { count: totalItems, rows: items } = data;
   const currentPage = page ? +page : 0;
-  const totalPages = Math.ceil(totalUsers / limit);
+  const totalPages = Math.ceil(totalItems / limit);
 
-  return { totalUsers, users, totalPages, currentPage };
+  return { totalItems, items, totalPages, currentPage };
 };
 
 // Retrieve all Users from the database.
 exports.findAll = async (req, res) => {
-  const { page, size, email, username, name, isInactive } = req.query;
-  var condition =
-    email || username || name
-      ? {
-          [Op.and]: [
-            {
-              [Op.or]: [
-                { username: { [Op.eq]: username } },
-                { email: { [Op.eq]: email } },
-                { name: { [Op.eq]: name } },
-              ],
-            },
-          ],
-        }
-      : {};
+  const { page, size, email, username, isInactive } = req.query;
+  var conditions = [];
+
+  if (username !== "") {
+    conditions.push({ username: { [Op.eq]: username } });
+  }
+  if (email !== "") {
+    conditions.push({ email: { [Op.eq]: email } });
+  }
 
   const { limit, offset } = getPagination(page, size);
 
   await User.findAndCountAll({
-    where: condition,
+    where: {
+      [Op.or]: conditions,
+    },
     attributes: { exclude: ["password"] },
     include: {
       model: Role,
@@ -69,13 +65,23 @@ exports.findAll = async (req, res) => {
 // Create and Save a new User
 exports.create = async (req, res) => {
   const user = {
-    name: req.body.name,
     username: req.body.username,
     email: req.body.email,
     password: bcrypt.hashSync(req.body.password, 8),
   };
 
-  await User.create(user)
+  db.sequelize
+    .transaction(async (t) => {
+      const createdUser = await User.create(user, {
+        transaction: t,
+      });
+
+      if (createdUser) {
+        await createdUser.setRoles(req.body.roles);
+      }
+
+      return createdUser;
+    })
     .then((data) => {
       res.send(data);
     })
@@ -106,7 +112,7 @@ exports.findOne = async (req, res) => {
     })
     .catch((err) => {
       res.status(500).send({
-        message: "Error retrieving User with id=" + id,
+        message: err.message || "Error retrieving User",
       });
     });
 };
@@ -119,12 +125,17 @@ exports.update = async (req, res) => {
     req.body.password = bcrypt.hashSync(req.body.password, 8);
   }
 
-  await User.update(req.body, {
-    where: { id: id },
-  })
+  db.sequelize
+    .transaction(async (t) => {
+      const updatedUser = await User.update(req.body, {
+        where: { id: id },
+        transaction: t,
+      });
+
+      return updatedUser;
+    })
     .then((num) => {
       if (num == 1) {
-        // update user_roles = delete and then add
         if (req.body.roles) {
           User.findOne({
             where: { id: id },
@@ -143,7 +154,7 @@ exports.update = async (req, res) => {
             })
             .catch((err) => {
               res.status(500).send({
-                message: "Error retrieving User with id=" + id,
+                message: err.message || "Error retrieving User",
               });
             });
         }
@@ -153,24 +164,29 @@ exports.update = async (req, res) => {
         });
       } else {
         res.send({
-          message: `Cannot update User with id=${id}. Maybe User was not found or req.body is empty!`,
+          message: `Cannot update User`,
         });
       }
     })
     .catch((err) => {
       res.status(500).send({
-        message: "Error updating User with id=" + id,
+        message: err.message || "Error updating User",
       });
     });
 };
 
-// Delete a User with the specified id in the request
 exports.delete = async (req, res) => {
   const id = req.params.id;
 
-  await User.destroy({
-    where: { id: id },
-  })
+  db.sequelize
+    .transaction(async (t) => {
+      const deletedUser = await User.destroy({
+        where: { id: id },
+        transaction: t,
+      });
+
+      return deletedUser;
+    })
     .then((num) => {
       if (num == 1) {
         res.send({
@@ -178,25 +194,30 @@ exports.delete = async (req, res) => {
         });
       } else {
         res.send({
-          message: `Cannot delete User with id=${id}. Maybe User was not found!`,
+          message: `Cannot delete User`,
         });
       }
     })
     .catch((err) => {
       res.status(500).send({
-        message: "Could not delete User with id=" + id,
+        message: err.message || "Could not delete User",
       });
     });
 };
 
-// Delete all Users from the database.
 exports.deleteAll = (req, res) => {
-  User.destroy({
-    where: {},
-    truncate: false,
-  })
+  db.sequelize
+    .transaction(async (t) => {
+      const deletedUsers = await User.destroy({
+        where: {},
+        truncate: false,
+        transaction: t,
+      });
+
+      return deletedUsers;
+    })
     .then((nums) => {
-      res.send({ message: `${nums} Users were deleted successfully!` });
+      res.send({ message: `${nums} deleted successfully` });
     })
     .catch((err) => {
       res.status(500).send({

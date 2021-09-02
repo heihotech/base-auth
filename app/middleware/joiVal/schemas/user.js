@@ -1,7 +1,6 @@
 const Joi = require("joi");
 
 const userCreatePOST = Joi.object().keys({
-  name: Joi.string().required(),
   username: Joi.string().required(),
   email: Joi.string().required(),
   password: Joi.string().required(),
@@ -9,7 +8,6 @@ const userCreatePOST = Joi.object().keys({
 });
 
 const userUpdatePOST = Joi.object().keys({
-  name: Joi.string().optional(),
   username: Joi.string().optional(),
   email: Joi.string().optional(),
   password: Joi.string().optional(),

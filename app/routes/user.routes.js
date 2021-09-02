@@ -11,17 +11,17 @@ module.exports = function (app) {
   });
 
   app.get(
-    "/api/user/",
+    "/api/users/",
     [auth.verifyToken, auth.superRole, auth.adminRole, auth.checkAuthorized],
     controller.findAll
   );
   app.get(
-    "/api/user/:id",
+    "/api/users/:id",
     [auth.verifyToken, auth.superRole, auth.adminRole, auth.checkAuthorized],
     controller.findOne
   );
   app.post(
-    "/api/user/",
+    "/api/users/",
     [
       joiVal.validate(joiVal.schemas.user.userCreatePOST),
       auth.verifyToken,
@@ -32,7 +32,7 @@ module.exports = function (app) {
     controller.create
   );
   app.put(
-    "/api/user/:id",
+    "/api/users/:id",
     [
       joiVal.validate(joiVal.schemas.user.userUpdatePOST),
       auth.verifyToken,
@@ -43,7 +43,7 @@ module.exports = function (app) {
     controller.update
   );
   app.delete(
-    "/api/user/:id",
+    "/api/users/:id",
     [auth.verifyToken, auth.superRole, auth.adminRole, auth.checkAuthorized],
     controller.delete
   );
